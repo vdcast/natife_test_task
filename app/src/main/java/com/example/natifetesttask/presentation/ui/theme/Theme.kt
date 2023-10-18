@@ -1,4 +1,4 @@
-package com.example.natifetesttask.ui.theme
+package com.example.natifetesttask.presentation.ui.theme
 
 import android.app.Activity
 import android.os.Build
