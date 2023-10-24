@@ -1,4 +1,4 @@
-package com.example.natifetesttask.data
+package com.example.natifetesttask.data.remote
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -57,8 +57,8 @@ data class FixedHeight(
     val url: String,
     @SerialName("mp4_size") val mp4Size: Int,
     val mp4: String,
-    @SerialName("webp_size") val webpSize: Int,
-    val webp: String
+    @SerialName("webp_size") val webpSize: Int? = null,
+    val webp: String? = null,
 )
 
 @Serializable
@@ -67,8 +67,8 @@ data class FixedHeightDownsampled(
     val width: Int,
     val size: Int,
     val url: String,
-    @SerialName("webp_size") val webpSize: Int,
-    val webp: String
+    @SerialName("webp_size") val webpSize: Int? = null,
+    val webp: String? = null,
 )
 
 @Serializable
@@ -79,8 +79,8 @@ data class FixedHeightSmall(
     val url: String,
     @SerialName("mp4_size") val mp4Size: Int,
     val mp4: String,
-    @SerialName("webp_size") val webpSize: Int,
-    val webp: String
+    @SerialName("webp_size") val webpSize: Int? = null,
+    val webp: String? = null,
 )
 
 @Serializable
@@ -91,8 +91,8 @@ data class FixedWidth(
     val url: String,
     @SerialName("mp4_size") val mp4Size: Int,
     val mp4: String,
-    @SerialName("webp_size") val webpSize: Int,
-    val webp: String
+    @SerialName("webp_size") val webpSize: Int? = null,
+    val webp: String? = null,
 )
 
 @Serializable
@@ -101,8 +101,8 @@ data class FixedWidthDownsampled(
     val width: Int,
     val size: Int,
     val url: String,
-    @SerialName("webp_size") val webpSize: Int,
-    val webp: String
+    @SerialName("webp_size") val webpSize: Int? = null,
+    val webp: String? = null,
 )
 
 @Serializable
@@ -158,8 +158,8 @@ data class Original(
     val url: String,
     @SerialName("mp4_size") val mp4Size: Int,
     val mp4: String,
-    @SerialName("webp_size") val webpSize: Int,
-    val webp: String,
+    @SerialName("webp_size") val webpSize: Int? = null,
+    val webp: String? = null,
     val frames: Int,
     val hash: String
 )
