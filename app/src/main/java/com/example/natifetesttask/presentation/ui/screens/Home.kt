@@ -2,16 +2,17 @@ package com.example.natifetesttask.presentation.ui.screens
 
 import android.annotation.SuppressLint
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -42,7 +43,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.natifetesttask.domain.AppViewModel
 import com.example.natifetesttask.presentation.ui.util.AlertDialogNoInternet
@@ -52,7 +52,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home(
-    appViewModel: AppViewModel = hiltViewModel(),
+    appViewModel: AppViewModel,
     onDetailsClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -62,9 +62,10 @@ fun Home(
     val uiStatePagination = uiState.pagination
     val imagesFromLocalState by appViewModel.imagesFromLocalStorage.collectAsState()
 
-    val imagesToShow = appViewModel.imagesToShow.collectAsState()
+    val imagesToShow = appViewModel.imagesToShowGrid.collectAsState()
 
-    var inputText by remember { mutableStateOf("") }
+//    var inputText by remember { mutableStateOf("") }
+    val inputText by appViewModel.inputText.collectAsState()
     var searchBarText by remember { mutableStateOf("") }
     val offset = remember { mutableStateOf(0) }
     var limit by remember { mutableStateOf(25) }
@@ -108,7 +109,7 @@ fun Home(
             OutlinedTextField(
                 value = inputText,
                 onValueChange = { newValue ->
-                    inputText = newValue
+                    appViewModel.updateInputText(newValue)
                 }
             )
             Button(
@@ -152,17 +153,21 @@ fun Home(
                         modifier = Modifier
                             .fillMaxSize()
                     ) {
-                        Text(
-                            text = searchBarText,
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                        AnimatedVisibility(visible = !searchBarText.isNullOrEmpty()) {
+                            Text(
+                                text = searchBarText,
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                        }
                         Row(
-                            modifier = Modifier,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            horizontalArrangement = Arrangement.Center
                         ) {
                             Button(
                                 onClick = {
@@ -178,6 +183,7 @@ fun Home(
                                     contentDescription = "button previous"
                                 )
                             }
+                            Spacer(modifier = Modifier.width(16.dp))
                             Button(
                                 onClick = {
                                     appViewModel.getImagesNext(
@@ -214,7 +220,19 @@ fun Home(
                                     GifImage(
                                         imagePath = imagePath,
                                         modifier = Modifier.clickable {
-                                            onDetailsClick()
+                                            appViewModel.updateImagesToShowDetails(
+                                                context = context,
+                                                onDetailsClick = {
+                                                    onDetailsClick()
+                                                },
+                                                onShowNoInternetAlert = {
+                                                    coroutineScope.launch {
+                                                        snackbarHostState.showSnackbar("You are in offline mode.\nPlease check network connection.")
+                                                    }
+                                                },
+                                                imagePath = imagePath,
+                                                id = imagesToShow.value.indexOf(imagePath) + offset.value
+                                            )
                                         }
                                     )
                                     Log.d("MYLOG", "~ ~ ~ KEK 5 ~ ~ ~")

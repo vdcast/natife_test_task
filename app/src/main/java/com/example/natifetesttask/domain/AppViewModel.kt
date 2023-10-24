@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.natifetesttask.data.local.images.ImageCached
@@ -16,8 +17,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -33,11 +36,20 @@ class AppViewModel @Inject constructor(
     private val _imagesFromLocalStorage = MutableStateFlow(emptyList<ImageCached>())
     val imagesFromLocalStorage = _imagesFromLocalStorage.asStateFlow()
 
-    private val _imagesToShow = MutableStateFlow(emptyList<String>())
-    val imagesToShow = _imagesToShow.asStateFlow()
+    private val _imagesToShowGrid = MutableStateFlow(emptyList<String>())
+    val imagesToShowGrid = _imagesToShowGrid.asStateFlow()
+
+    private val _imagesToShowDetails = MutableStateFlow(emptyList<String>())
+    val imagesToShowDetails = _imagesToShowDetails.asStateFlow()
 
     private val _firstOpen = MutableStateFlow(prefs.getFirstOpen())
     val firstOpen = _firstOpen.asStateFlow()
+
+    private val _selectedImageIndex = MutableStateFlow(0)
+    val selectedImageIndex = _selectedImageIndex.asStateFlow()
+
+    private val _inputText = MutableStateFlow("")
+    val inputText = _inputText.asStateFlow()
 
     init {
 //        restoreImages()
@@ -54,11 +66,55 @@ class AppViewModel @Inject constructor(
 //        }
     }
 
-    fun updateImagesToShow(images: List<String>) {
-        _imagesToShow.value = images
+    fun updateInputText(inputText: String) {
+        _inputText.value = inputText
     }
 
-    fun getImages(search: String, offset: Int, limit: Int, context: Context, alertDialogNoInternetIsVisible: MutableState<Boolean>) {
+    fun updateImagesToShowGrid(images: List<String>) {
+        _imagesToShowGrid.value = images
+    }
+
+    fun updateImagesToShowDetails(
+        context: Context,
+        onDetailsClick: () -> Unit,
+        onShowNoInternetAlert: () -> Unit,
+        imagePath: String,
+        id: Int
+    ) {
+        Log.d("MYLOG", "selectedImageIndex.value: ${selectedImageIndex.value}")
+
+        if (isNetworkAvailable(context = context)) {
+            updateSelectedImageIndex(id = id) {
+                onDetailsClick()
+            }
+            viewModelScope.launch(Dispatchers.IO) {
+                val cachedImages = localImageRepository.getAllImagesFromLocal().first()
+                val listOfImagesToShowDetails = cachedImages.map { it.pathNetworkOriginal }
+                _imagesToShowDetails.value = listOfImagesToShowDetails
+//                withContext(Dispatchers.Main) {
+//                    onDetailsClick()
+//                }
+            }
+        } else {
+            onShowNoInternetAlert()
+        }
+    }
+    private fun updateSelectedImageIndex(id: Int, onDetailsClick: () -> Unit,) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _selectedImageIndex.value = id
+            withContext(Dispatchers.Main) {
+                onDetailsClick()
+            }
+        }
+    }
+
+    fun getImages(
+        search: String,
+        offset: Int,
+        limit: Int,
+        context: Context,
+        alertDialogNoInternetIsVisible: MutableState<Boolean>
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
 
             if (isNetworkAvailable(context = context)) {
@@ -100,18 +156,18 @@ class AppViewModel @Inject constructor(
         offset: Int,
         limit: Int
     ) {
-            images.forEach { image ->
-                networkImageRepository.downloadGifAndSave(
-                    pathOriginal = image.images.original.url,
-                    pathSmall = image.images.fixedWidthSmall.url,
-                    context = context
-                )
-            }
-//
-            updateImagesFromLocalStorage(
-                offset = offset,
-                limit = limit
+        images.forEach { image ->
+            networkImageRepository.downloadGifAndSave(
+                pathOriginal = image.images.original.url,
+                pathSmall = image.images.fixedWidthSmall.url,
+                context = context
             )
+        }
+//
+        updateImagesFromLocalStorage(
+            offset = offset,
+            limit = limit
+        )
 
     }
 
@@ -144,7 +200,7 @@ class AppViewModel @Inject constructor(
                 }
 
                 val listOfImagesToShow = cachedImages.map { it.pathLocalSmall }
-                updateImagesToShow(listOfImagesToShow)
+                updateImagesToShowGrid(listOfImagesToShow)
             } else {
                 if (isNetworkAvailable(context = context)) {
                     if (!inputText.isNullOrBlank() || !inputText.isNullOrEmpty()) {
@@ -197,7 +253,7 @@ class AppViewModel @Inject constructor(
 
 
                 val listOfImagesToShow = cachedImages.map { it.pathLocalSmall }
-                updateImagesToShow(listOfImagesToShow)
+                updateImagesToShowGrid(listOfImagesToShow)
 
 //                val giphyResponse = networkImageRepository.getGiphyResponse(
 //                    search = search,
@@ -235,21 +291,26 @@ class AppViewModel @Inject constructor(
 
             val listOfImagesToShow = cachedImagesToShow.map { it.pathLocalSmall }
 
-            updateImagesToShow(listOfImagesToShow)
+            updateImagesToShowGrid(listOfImagesToShow)
         }
     }
+
     private fun resetUiState() {
         _uiState.update { it.copy() }
     }
+
     private fun resetImagesToShow() {
-        _imagesToShow.value = emptyList<String>()
+        _imagesToShowGrid.value = emptyList<String>()
     }
 
     private fun isNetworkAvailable(context: Context): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork
         val capabilities = connectivityManager.getNetworkCapabilities(network)
-        return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR))
+        return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || capabilities.hasTransport(
+            NetworkCapabilities.TRANSPORT_CELLULAR
+        ))
     }
 
     private fun updateFirstOpenAndMarkAsDone() {
