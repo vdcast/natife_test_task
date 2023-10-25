@@ -5,10 +5,10 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.natifetesttask.data.local.images.ImageCached
+import com.example.natifetesttask.data.local.images_deleted.ImageDeleted
 import com.example.natifetesttask.data.local.prefs.SharedPrefs
 import com.example.natifetesttask.data.remote.Data
 import com.example.natifetesttask.domain.local.LocalImageRepository
@@ -18,9 +18,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -42,8 +47,6 @@ class AppViewModel @Inject constructor(
     private val _imagesToShowDetails = MutableStateFlow(emptyList<String>())
     val imagesToShowDetails = _imagesToShowDetails.asStateFlow()
 
-    private val _firstOpen = MutableStateFlow(prefs.getFirstOpen())
-    val firstOpen = _firstOpen.asStateFlow()
 
     private val _selectedImageIndex = MutableStateFlow(0)
     val selectedImageIndex = _selectedImageIndex.asStateFlow()
@@ -70,8 +73,9 @@ class AppViewModel @Inject constructor(
         _inputText.value = inputText
     }
 
-    fun updateImagesToShowGrid(images: List<String>) {
-        _imagesToShowGrid.value = images
+    fun updateImagesToShowGrid(cachedImagesToShow: List<ImageCached>) {
+        val listOfImagesToShow = cachedImagesToShow.map { it.pathLocalSmall }
+        _imagesToShowGrid.value = listOfImagesToShow
     }
 
     fun updateImagesToShowDetails(
@@ -99,7 +103,8 @@ class AppViewModel @Inject constructor(
             onShowNoInternetAlert()
         }
     }
-    private fun updateSelectedImageIndex(id: Int, onDetailsClick: () -> Unit,) {
+
+    private fun updateSelectedImageIndex(id: Int, onDetailsClick: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             _selectedImageIndex.value = id
             withContext(Dispatchers.Main) {
@@ -113,14 +118,16 @@ class AppViewModel @Inject constructor(
         offset: Int,
         limit: Int,
         context: Context,
-        alertDialogNoInternetIsVisible: MutableState<Boolean>
+        alertDialogNoInternetIsVisible: MutableState<Boolean>,
+        buttonGetImagesEnabled: MutableState<Boolean>,
     ) {
         viewModelScope.launch(Dispatchers.IO) {
 
             if (isNetworkAvailable(context = context)) {
+                buttonGetImagesEnabled.value = false
+
                 localImageRepository.deleteAll()
 //            restoreImages()
-                updateFirstOpenAndMarkAsDone()
                 resetImagesToShow()
 
                 val giphyResponse = networkImageRepository.getGiphyResponse(
@@ -144,6 +151,8 @@ class AppViewModel @Inject constructor(
                         meta = giphyResponse.meta
                     )
                 }
+
+                buttonGetImagesEnabled.value = true
             } else {
                 alertDialogNoInternetIsVisible.value = true
             }
@@ -156,12 +165,20 @@ class AppViewModel @Inject constructor(
         offset: Int,
         limit: Int
     ) {
+        val deletedImagesPaths =
+            localImageRepository.getAllImageDeleted().firstOrNull()?.map { it.pathNetworkOriginal }
+                ?: listOf()
+
         images.forEach { image ->
-            networkImageRepository.downloadGifAndSave(
-                pathOriginal = image.images.original.url,
-                pathSmall = image.images.fixedWidthSmall.url,
-                context = context
-            )
+            val imagePath = image.images.original.url
+            val needToSave = imagePath !in deletedImagesPaths
+            if (needToSave) {
+                networkImageRepository.downloadGifAndSave(
+                    pathOriginal = image.images.original.url,
+                    pathSmall = image.images.fixedWidthSmall?.url ?: "",
+                    context = context
+                )
+            }
         }
 //
         updateImagesFromLocalStorage(
@@ -199,8 +216,7 @@ class AppViewModel @Inject constructor(
                     it.copy(imagesCached = cachedImages)
                 }
 
-                val listOfImagesToShow = cachedImages.map { it.pathLocalSmall }
-                updateImagesToShowGrid(listOfImagesToShow)
+                updateImagesToShowGrid(cachedImages)
             } else {
                 if (isNetworkAvailable(context = context)) {
                     if (!inputText.isNullOrBlank() || !inputText.isNullOrEmpty()) {
@@ -252,8 +268,7 @@ class AppViewModel @Inject constructor(
                 val cachedImages = localImageRepository.getGifs(offset.value, limit)
 
 
-                val listOfImagesToShow = cachedImages.map { it.pathLocalSmall }
-                updateImagesToShowGrid(listOfImagesToShow)
+                updateImagesToShowGrid(cachedImages)
 
 //                val giphyResponse = networkImageRepository.getGiphyResponse(
 //                    search = search,
@@ -289,9 +304,7 @@ class AppViewModel @Inject constructor(
                 }
             }
 
-            val listOfImagesToShow = cachedImagesToShow.map { it.pathLocalSmall }
-
-            updateImagesToShowGrid(listOfImagesToShow)
+            updateImagesToShowGrid(cachedImagesToShow)
         }
     }
 
@@ -313,13 +326,55 @@ class AppViewModel @Inject constructor(
         ))
     }
 
-    private fun updateFirstOpenAndMarkAsDone() {
-        prefs.setFirstOpen(firstOpen = true)
-        _firstOpen.value = prefs.getFirstOpen()
+
+    fun deleteImage(
+        imagePathNetworkOriginal: String,
+        onClose: () -> Unit
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            Log.d("MYLOG", "imagePathNetworkOriginal: $imagePathNetworkOriginal")
+
+            val imageCached = localImageRepository.getImageByPathNetworkOriginal(imagePathNetworkOriginal)
+            val imagePathLocalSmall = imageCached?.pathLocalSmall
+
+            if (imagePathLocalSmall != null) {
+                deleteFile(imagePathLocalSmall)
+
+                val currentDate = Date(System.currentTimeMillis())
+                val dateFormat = SimpleDateFormat("dd-MM-yy", Locale.getDefault())
+                val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+                val dateStr = dateFormat.format(currentDate)
+                val timeStr = timeFormat.format(currentDate)
+                val timeDeleted = "$dateStr | $timeStr"
+
+                val newImageDeleted = ImageDeleted(
+                    pathNetworkOriginal = imagePathNetworkOriginal,
+                    pathLocalSmall = imagePathLocalSmall,
+                    timeDeleted = timeDeleted
+                )
+
+                localImageRepository.insertImageDeleted(newImageDeleted)
+
+                localImageRepository.deleteImageByPathNetworkOriginal(imagePathNetworkOriginal)
+
+
+                withContext(Dispatchers.Main) {
+                    onClose()
+                }
+
+            }
+        }
     }
 
-    private fun setFirstOpen(firstOpen: Boolean) {
-        prefs.setFirstOpen(firstOpen)
+    private fun deleteFile(filePath: String): Boolean {
+        val file = File(filePath)
+        return if (file.exists()) {
+            Log.d("MYLOG", "~ ~ ~ DELETED ~ ~ ~")
+            file.delete()
+        } else {
+            Log.d("MYLOG", "~ ~ ~ NOT deleted ~ ~ ~")
+            false
+        }
     }
 }
 

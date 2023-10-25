@@ -55,8 +55,8 @@ data class FixedHeight(
     val width: Int,
     val size: Int,
     val url: String,
-    @SerialName("mp4_size") val mp4Size: Int,
-    val mp4: String,
+    @SerialName("mp4_size") val mp4Size: Int? = null,
+    val mp4: String? = null,
     @SerialName("webp_size") val webpSize: Int? = null,
     val webp: String? = null,
 )
@@ -77,8 +77,8 @@ data class FixedHeightSmall(
     val width: Int,
     val size: Int,
     val url: String,
-    @SerialName("mp4_size") val mp4Size: Int,
-    val mp4: String,
+    @SerialName("mp4_size") val mp4Size: Int? = null,
+    val mp4: String? = null,
     @SerialName("webp_size") val webpSize: Int? = null,
     val webp: String? = null,
 )
@@ -89,8 +89,8 @@ data class FixedWidth(
     val width: Int,
     val size: Int,
     val url: String,
-    @SerialName("mp4_size") val mp4Size: Int,
-    val mp4: String,
+    @SerialName("mp4_size") val mp4Size: Int? = null,
+    val mp4: String? = null,
     @SerialName("webp_size") val webpSize: Int? = null,
     val webp: String? = null,
 )
@@ -111,8 +111,8 @@ data class FixedWidthSmall(
     val width: Int,
     val size: Int,
     val url: String,
-    @SerialName("mp4_size") val mp4Size: Int,
-    val mp4: String,
+    @SerialName("mp4_size") val mp4Size: Int? = null,
+    val mp4: String? = null,
     @SerialName("webp_size") val webpSize: Int? = null,
     val webp: String? = null,
 )
@@ -120,12 +120,12 @@ data class FixedWidthSmall(
 @Serializable
 data class Images(
     val original: Original,
-    @SerialName("fixed_height") val fixedHeight: FixedHeight,
-    @SerialName("fixed_height_downsampled") val fixedHeightDownsampled: FixedHeightDownsampled,
-    @SerialName("fixed_height_small") val fixedHeightSmall: FixedHeightSmall,
-    @SerialName("fixed_width") val fixedWidth: FixedWidth,
-    @SerialName("fixed_width_downsampled") val fixedWidthDownsampled: FixedWidthDownsampled,
-    @SerialName("fixed_width_small") val fixedWidthSmall: FixedWidthSmall
+    @SerialName("fixed_height") val fixedHeight: FixedHeight? = null,
+    @SerialName("fixed_height_downsampled") val fixedHeightDownsampled: FixedHeightDownsampled? = null,
+    @SerialName("fixed_height_small") val fixedHeightSmall: FixedHeightSmall? = null,
+    @SerialName("fixed_width") val fixedWidth: FixedWidth? = null,
+    @SerialName("fixed_width_downsampled") val fixedWidthDownsampled: FixedWidthDownsampled? = null,
+    @SerialName("fixed_width_small") val fixedWidthSmall: FixedWidthSmall? = null
 )
 
 @Serializable
@@ -156,8 +156,8 @@ data class Original(
     val width: Int,
     val size: Int,
     val url: String,
-    @SerialName("mp4_size") val mp4Size: Int,
-    val mp4: String,
+    @SerialName("mp4_size") val mp4Size: Int? = null,
+    val mp4: String? = null,
     @SerialName("webp_size") val webpSize: Int? = null,
     val webp: String? = null,
     val frames: Int,

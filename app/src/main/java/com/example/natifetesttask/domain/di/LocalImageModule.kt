@@ -2,8 +2,9 @@ package com.example.natifetesttask.domain.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.natifetesttask.data.local.images.AppDatabase
+import com.example.natifetesttask.data.local.database.AppDatabase
 import com.example.natifetesttask.data.local.images.ImageDao
+import com.example.natifetesttask.data.local.images_deleted.ImageDeletedDao
 import com.example.natifetesttask.domain.local.LocalImageRepository
 import com.example.natifetesttask.domain.local.LocalImageRepositoryImpl
 import dagger.Module
@@ -32,6 +33,13 @@ object LocalImageModule {
 
     @Singleton
     @Provides
-    fun provideImageRepository(imageDao: ImageDao): LocalImageRepository = LocalImageRepositoryImpl(imageDao)
+    fun provideImageDeletedDao(database: AppDatabase): ImageDeletedDao = database.imageDeletedDao()
+
+    @Singleton
+    @Provides
+    fun provideImageRepository(
+        imageDao: ImageDao,
+        imageDeletedDao: ImageDeletedDao
+    ): LocalImageRepository = LocalImageRepositoryImpl(imageDao, imageDeletedDao)
 
 }

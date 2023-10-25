@@ -4,4 +4,5 @@
     <string name="no_internet_description">Please, check your connection with network and try again.</string>
     <string name="no_internet_confirm">Try again</string>
     <string name="no_internet_dismiss">Cancel</string>
+    <string name="home_hint_on_screen">Input some text to search GIFs.</string>
 </resources>

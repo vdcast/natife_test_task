@@ -41,9 +41,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.natifetesttask.R
 import com.example.natifetesttask.domain.AppViewModel
 import com.example.natifetesttask.presentation.ui.util.AlertDialogNoInternet
 import kotlinx.coroutines.launch
@@ -72,9 +74,8 @@ fun Home(
 
     val alertDialogNoInternetIsVisible = remember { mutableStateOf(false) }
     val isLoading = remember { mutableStateOf(false) }
-//    val firstSearchAttempt = remember { mutableStateOf(true) }
-    val firstSearchAttempt by appViewModel.firstOpen.collectAsState()
     val isLoadingNextFromNetwork = remember { mutableStateOf(false) }
+    val buttonGetImagesEnabled = remember { mutableStateOf(true) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -107,15 +108,21 @@ fun Home(
 
 
             OutlinedTextField(
+                modifier = Modifier
+                    .padding(8.dp),
                 value = inputText,
                 onValueChange = { newValue ->
                     appViewModel.updateInputText(newValue)
                 }
             )
             Button(
+                modifier = Modifier
+                    .padding(8.dp),
+                enabled = buttonGetImagesEnabled.value,
                 onClick = {
-//                    firstSearchAttempt.value = true
-//                    isLoading.value = true
+//                    coroutineScope.launch {
+//                        appViewModel.debounceButtonGetImages(buttonGetImagesEnabled)
+//                    }
                     searchBarText = inputText
                     if (!inputText.isNullOrBlank() || !inputText.isNullOrEmpty()) {
                         appViewModel.getImages(
@@ -123,7 +130,8 @@ fun Home(
                             offset = 0,
                             limit = limit,
                             context = context,
-                            alertDialogNoInternetIsVisible = alertDialogNoInternetIsVisible
+                            alertDialogNoInternetIsVisible = alertDialogNoInternetIsVisible,
+                            buttonGetImagesEnabled = buttonGetImagesEnabled
                         )
                     } else {
                         coroutineScope.launch {
@@ -134,14 +142,19 @@ fun Home(
             ) { Text(text = "Get Images!") }
 
 
-            if (!firstSearchAttempt) {
-                Text("Input something to search some gifs.")
-            } else if (isLoading.value) {
-                CircularProgressIndicator(
-                    modifier = Modifier.clickable {
-                        isLoading.value = false
-                    }
-                )
+            if (isLoading.value) {
+                if (!buttonGetImagesEnabled.value) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.clickable {
+                            isLoading.value = false
+                        }
+                    )
+                } else {
+                    Text(
+                        text = stringResource(id = R.string.home_hint_on_screen),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             } else {
                 AnimatedVisibility(visible = !imagesToShow.value.isNullOrEmpty()) {
                     Log.d("MYLOG", "~ ~ ~ KEK 4 ~ ~ ~")
@@ -170,6 +183,7 @@ fun Home(
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Button(
+                                enabled = !isLoadingNextFromNetwork.value && !isLoading.value,
                                 onClick = {
                                     appViewModel.getImagesPrevious(
                                         offset = offset,
@@ -185,6 +199,7 @@ fun Home(
                             }
                             Spacer(modifier = Modifier.width(16.dp))
                             Button(
+                                enabled = !isLoadingNextFromNetwork.value && !isLoading.value,
                                 onClick = {
                                     appViewModel.getImagesNext(
                                         search = inputText,
@@ -206,7 +221,13 @@ fun Home(
 
 
                         if (isLoadingNextFromNetwork.value) {
-                            CircularProgressIndicator()
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
                         } else {
                             LazyVerticalGrid(
                                 columns = GridCells.Fixed(2),
@@ -255,7 +276,8 @@ fun Home(
                 offset = 0,
                 limit = limit,
                 context = context,
-                alertDialogNoInternetIsVisible = alertDialogNoInternetIsVisible
+                alertDialogNoInternetIsVisible = alertDialogNoInternetIsVisible,
+                buttonGetImagesEnabled = buttonGetImagesEnabled
             )
         }
     }

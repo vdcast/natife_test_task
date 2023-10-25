@@ -10,6 +10,5 @@ data class ImageCached(
     val pathNetworkOriginal: String,
     val pathNetworkSmall: String,
     val pathLocalOriginal: String,
-    val pathLocalSmall: String,
-    val isDeleted: Boolean = false
+    val pathLocalSmall: String
 )

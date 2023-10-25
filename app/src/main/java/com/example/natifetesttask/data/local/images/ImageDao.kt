@@ -22,4 +22,8 @@ interface ImageDao {
     fun getGifs(offset: Int, limit: Int): List<ImageCached>
     @Query("DELETE FROM images_cached")
     suspend fun deleteAll()
+    @Query("DELETE FROM images_cached WHERE pathNetworkOriginal = :imagePath")
+    suspend fun deleteImageByPathNetworkOriginal(imagePath: String)
+    @Query("SELECT * FROM images_cached WHERE pathNetworkOriginal = :imagePath")
+    suspend fun getImageByPathNetworkOriginal(imagePath: String): ImageCached?
 }

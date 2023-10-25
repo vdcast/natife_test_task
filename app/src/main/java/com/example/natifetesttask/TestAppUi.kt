@@ -73,7 +73,10 @@ fun TestAppUi(
             )
         }
         composable(Routes.Details.route) {
-            GifDetails(appViewModel = appViewModel)
+            GifDetails(
+                appViewModel = appViewModel,
+                onCLose = { navController.popBackStack() }
+            )
         }
 
     }
