@@ -25,16 +25,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
+import com.example.natifetesttask.R
 import com.example.natifetesttask.domain.AppViewModel
 import com.example.natifetesttask.presentation.ui.theme.Red20
 
@@ -47,18 +45,12 @@ fun GifDetails(
     val imagesToShowDetails by appViewModel.imagesToShowDetails.collectAsState()
     val selectedImageIndex by appViewModel.selectedImageIndex.collectAsState()
 
-//    val pageCount = imagesToShow.size
-
     val pagerState = rememberPagerState(
         pageCount = {
             imagesToShowDetails.size
         },
         initialPage = selectedImageIndex
     )
-
-    val coroutineScope = rememberCoroutineScope()
-
-    var previousPageIteration by remember { mutableStateOf(0) }
 
     HorizontalPager(
         state = pagerState,
@@ -90,15 +82,15 @@ fun GifDetailsPager(page: Int, imagePath: String, onClose: () -> Unit, onDelete:
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(dimensionResource(id = R.dimen.padding_medium)),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Spacer(modifier = Modifier.width(48.dp))
+            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_xlarge)))
             Text("Page: $page")
             Icon(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(dimensionResource(id = R.dimen.padding_xlarge))
                     .clickable { onClose() },
                 imageVector = Icons.Default.Close,
                 contentDescription = "close details"
@@ -115,14 +107,14 @@ fun GifDetailsPager(page: Int, imagePath: String, onClose: () -> Unit, onDelete:
         Button(
             modifier = Modifier
                 .fillMaxWidth(0.75f)
-                .padding(16.dp),
+                .padding(dimensionResource(id = R.dimen.padding_medium)),
             onClick = { onDelete() },
-            shape = RoundedCornerShape(16.dp),
-            elevation = ButtonDefaults.buttonElevation(4.dp),
+            shape = RoundedCornerShape(dimensionResource(id = R.dimen.padding_medium)),
+            elevation = ButtonDefaults.buttonElevation(dimensionResource(id = R.dimen.padding_xsmall)),
             colors = ButtonDefaults.buttonColors(Red20)
         ) {
             Text(
-                text = "Delete GIF",
+                text = stringResource(id = R.string.delete_gif),
                 color = Color.White,
                 style = MaterialTheme.typography.bodyLarge
             )

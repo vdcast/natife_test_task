@@ -26,25 +26,30 @@ interface NetworkImageRepository {
     )
 }
 
-class NetworkImageRepositoryImpl(private val httpClient: HttpClient, private val imageDao: ImageDao) : NetworkImageRepository {
+class NetworkImageRepositoryImpl(
+    private val httpClient: HttpClient,
+    private val imageDao: ImageDao
+) : NetworkImageRepository {
     override fun closeClient() {
         httpClient.close()
     }
+
     private val API_KEY = "DOdqj0cV0EKTKH9hkQvHxqfloK4WfVlB"
     override suspend fun getGiphyResponse(
         search: String,
         offset: Int,
         limit: Int
     ): GiphyResponse {
-//        val itemsToLoad = min(limit, totalCount - offset)
-
         return httpClient
             .get("https://api.giphy.com/v1/gifs/search?api_key=$API_KEY&q=$search&limit=$limit&offset=$offset&rating=g&lang=en&bundle=messaging_non_clips")
             .body()
-//        return imagesResponse.data
     }
 
-    override suspend fun downloadGifAndSave(pathOriginal: String, pathSmall: String, context: Context) {
+    override suspend fun downloadGifAndSave(
+        pathOriginal: String,
+        pathSmall: String,
+        context: Context
+    ) {
         val httpClient = HttpClient()
         val byteArraySmall = httpClient.get(pathSmall).readBytes()
 
@@ -60,13 +65,5 @@ class NetworkImageRepositoryImpl(private val httpClient: HttpClient, private val
             pathLocalSmall = fileSmall.path,
         )
         imageDao.insert(imageEntity)
-
-
-
-//        val byteArrayOriginal = httpClient.get(pathOriginal).readBytes()
-//        val fileOriginal = File(context.cacheDir, "${uniqueId}_original.gif")
-//        fileOriginal.writeBytes(byteArrayOriginal)
     }
-
-
 }

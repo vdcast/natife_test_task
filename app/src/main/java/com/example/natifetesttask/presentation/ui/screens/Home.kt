@@ -1,7 +1,6 @@
 package com.example.natifetesttask.presentation.ui.screens
 
 import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,9 +40,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.natifetesttask.R
 import com.example.natifetesttask.domain.AppViewModel
@@ -57,44 +56,34 @@ fun Home(
     appViewModel: AppViewModel,
     onDetailsClick: () -> Unit
 ) {
+    val snackbarEmptyInput = stringResource(id = R.string.snackbar_input_empty)
+    val snackbarOfflineMode = stringResource(id = R.string.snackbar_offline_mode)
     val context = LocalContext.current
-
-    val uiState by appViewModel.uiState.collectAsState()
-    val uiStateImages = uiState.images
-    val uiStatePagination = uiState.pagination
-    val imagesFromLocalState by appViewModel.imagesFromLocalStorage.collectAsState()
-
     val imagesToShow = appViewModel.imagesToShowGrid.collectAsState()
-
-//    var inputText by remember { mutableStateOf("") }
     val inputText by appViewModel.inputText.collectAsState()
-    var searchBarText by remember { mutableStateOf("") }
-    val offset = remember { mutableStateOf(0) }
-    var limit by remember { mutableStateOf(25) }
-
-    val alertDialogNoInternetIsVisible = remember { mutableStateOf(false) }
-    val isLoading = remember { mutableStateOf(false) }
-    val isLoadingNextFromNetwork = remember { mutableStateOf(false) }
-    val buttonGetImagesEnabled = remember { mutableStateOf(true) }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    var searchBarText by remember { mutableStateOf("") }
+    var limit by remember { mutableStateOf(25) }
+    val offset = remember { mutableStateOf(0) }
+
+    val buttonGetImagesEnabled = remember { mutableStateOf(true) }
+    val isLoading = remember { mutableStateOf(false) }
+    val isLoadingNextFromNetwork = remember { mutableStateOf(false) }
+    val alertDialogNoInternetIsVisible = remember { mutableStateOf(false) }
+
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(key1 = Unit) {
-        Log.d("MYLOG", "~ ~ ~ KEK 1 ~ ~ ~")
-        Log.d("MYLOG", "LaunchedEffect (imagesToShow.value)")
-
         appViewModel.updateImagesFromLocalStorage(
             offset = offset.value,
             limit = limit
         )
     }
-
     LaunchedEffect(key1 = imagesToShow.value) {
         isLoading.value = imagesToShow.value.isNullOrEmpty()
         isLoadingNextFromNetwork.value = imagesToShow.value.isNullOrEmpty()
     }
-
     Scaffold(
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
@@ -105,24 +94,18 @@ fun Home(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-
-
             OutlinedTextField(
                 modifier = Modifier
-                    .padding(8.dp),
+                    .padding(dimensionResource(id = R.dimen.padding_small)),
                 value = inputText,
                 onValueChange = { newValue ->
                     appViewModel.updateInputText(newValue)
                 }
             )
             Button(
-                modifier = Modifier
-                    .padding(8.dp),
+                modifier = Modifier,
                 enabled = buttonGetImagesEnabled.value,
                 onClick = {
-//                    coroutineScope.launch {
-//                        appViewModel.debounceButtonGetImages(buttonGetImagesEnabled)
-//                    }
                     searchBarText = inputText
                     if (!inputText.isNullOrBlank() || !inputText.isNullOrEmpty()) {
                         appViewModel.getImages(
@@ -135,12 +118,11 @@ fun Home(
                         )
                     } else {
                         coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Please input something")
+                            snackbarHostState.showSnackbar(snackbarEmptyInput)
                         }
                     }
                 }
-            ) { Text(text = "Get Images!") }
-
+            ) { Text(text = stringResource(id = R.string.get_images)) }
 
             if (isLoading.value) {
                 if (!buttonGetImagesEnabled.value) {
@@ -157,11 +139,6 @@ fun Home(
                 }
             } else {
                 AnimatedVisibility(visible = !imagesToShow.value.isNullOrEmpty()) {
-                    Log.d("MYLOG", "~ ~ ~ KEK 4 ~ ~ ~")
-                    Log.d("MYLOG", "imagesToShow.value: ${imagesToShow.value}")
-
-
-
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -178,7 +155,9 @@ fun Home(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(
+                                    bottom = dimensionResource(id = R.dimen.padding_small)
+                                ),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
@@ -189,7 +168,6 @@ fun Home(
                                         offset = offset,
                                         limit = limit
                                     )
-
                                 }
                             ) {
                                 Icon(
@@ -197,7 +175,7 @@ fun Home(
                                     contentDescription = "button previous"
                                 )
                             }
-                            Spacer(modifier = Modifier.width(16.dp))
+                            Spacer(modifier = Modifier.width(dimensionResource(id = R.dimen.padding_medium)))
                             Button(
                                 enabled = !isLoadingNextFromNetwork.value && !isLoading.value,
                                 onClick = {
@@ -218,8 +196,6 @@ fun Home(
                                 )
                             }
                         }
-
-
                         if (isLoadingNextFromNetwork.value) {
                             Row(
                                 modifier = Modifier
@@ -231,11 +207,11 @@ fun Home(
                         } else {
                             LazyVerticalGrid(
                                 columns = GridCells.Fixed(2),
-                                horizontalArrangement = Arrangement.spacedBy(5.dp),
-                                verticalArrangement = Arrangement.spacedBy(5.dp),
+                                horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_five)),
+                                verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_five)),
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 5.dp)
+                                    .padding(horizontal = dimensionResource(id = R.dimen.padding_five))
                             ) {
                                 items(imagesToShow.value) { imagePath ->
                                     GifImage(
@@ -248,19 +224,16 @@ fun Home(
                                                 },
                                                 onShowNoInternetAlert = {
                                                     coroutineScope.launch {
-                                                        snackbarHostState.showSnackbar("You are in offline mode.\nPlease check network connection.")
+                                                        snackbarHostState.showSnackbar(snackbarOfflineMode)
                                                     }
                                                 },
-                                                imagePath = imagePath,
                                                 id = imagesToShow.value.indexOf(imagePath) + offset.value
                                             )
                                         }
                                     )
-                                    Log.d("MYLOG", "~ ~ ~ KEK 5 ~ ~ ~")
                                 }
                             }
                         }
-
                     }
                 }
             }
@@ -288,10 +261,6 @@ fun GifImage(
     modifier: Modifier,
     imagePath: String
 ) {
-//    val context = LocalContext.current
-//    val imageLoader = ImageLoader.Builder(context)
-//    val imageLoader = LocalImageLoader.current
-
     AsyncImage(
         model = imagePath,
         contentDescription = null,

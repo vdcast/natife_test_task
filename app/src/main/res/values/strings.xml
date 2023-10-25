@@ -5,4 +5,8 @@
     <string name="no_internet_confirm">Try again</string>
     <string name="no_internet_dismiss">Cancel</string>
     <string name="home_hint_on_screen">Input some text to search GIFs.</string>
+    <string name="snackbar_input_empty">Please input something</string>
+    <string name="snackbar_offline_mode">You are in offline mode.\nPlease check network connection.</string>
+    <string name="get_images">Get Images!</string>
+    <string name="delete_gif">Delete GIF</string>
 </resources>
